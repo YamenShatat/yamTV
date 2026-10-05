@@ -21,7 +21,7 @@
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* full */ } }
   };
-  function relayBase() { return (ls.get('relay') || RELAY).replace(/\/+$/, ''); }
+  function relayBase() { return (ls.get('yamtv:relay') || RELAY).replace(/\/+$/, ''); }
   function tell(fn) {
     var args = [].slice.call(arguments, 1);
     setTimeout(function () { if (window.App && window.App[fn]) window.App[fn].apply(null, args); }, 0);
@@ -187,7 +187,7 @@
 
   function relayUrl(u) {
     if (!/^https?:/i.test(u)) return u;
-    if (location.protocol === 'http:' && /^http:\/\/(localhost|127\.)/i.test(u) && !ls.get('relay')) return u; // local testing
+    if (location.protocol === 'http:' && /^http:\/\/(localhost|127\.)/i.test(u) && !ls.get('yamtv:relay')) return u; // local testing
     return relayBase() + '/s?u=' + encodeURIComponent(u);
   }
 
@@ -375,16 +375,16 @@
     var pos = Math.round(video.currentTime * 1000), dur = Math.round((video.duration || 0) * 1000);
     if (!isFinite(dur) || (dur <= 0 && !isEnded)) return;
     var all;
-    try { all = JSON.parse(ls.get('progress') || '{}') || {}; } catch (e) { all = {}; }
+    try { all = JSON.parse(ls.get('yamtv:progress') || '{}') || {}; } catch (e) { all = {}; }
     if (!isEnded && pos > 10000 && pos < dur - 120000) all[currentId] = { p: pos, d: dur, t: Date.now() };
     else if (isEnded || pos >= dur - 120000) delete all[currentId];
-    ls.set('progress', JSON.stringify(all));
+    ls.set('yamtv:progress', JSON.stringify(all));
   }
   function forget(id) {
     try {
-      var all = JSON.parse(ls.get('progress') || '{}') || {};
+      var all = JSON.parse(ls.get('yamtv:progress') || '{}') || {};
       delete all[id];
-      ls.set('progress', JSON.stringify(all));
+      ls.set('yamtv:progress', JSON.stringify(all));
     } catch (e) { /* nothing saved */ }
   }
 
@@ -409,8 +409,10 @@
   window.Native = {
     platform: function () { return 'web'; },
     apiBase: apiBase,
-    get: function (k) { return ls.get(k); },
-    set: function (k, v) { ls.set(k, v); },
+    // yamDrive lives on the same address (yamenshatat.github.io), so it shares this browser storage;
+    // yamTV keeps its own data under its own names so the two never mix.
+    get: function (k) { return ls.get('yamtv:' + k); },
+    set: function (k, v) { ls.set('yamtv:' + k, v); },
     play: play,
     stop: stop,
     fullscreen: function () { if (active) { full = true; place(); tell('onFullscreen', true); if (live) tell('liveInfo'); } },

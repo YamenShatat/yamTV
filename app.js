@@ -69,7 +69,7 @@
     get: function (k, d) {
       try {
         var v = N.get(k);
-        if (v == null) {
+        if (v == null && !WEB) { // the website must not pick up another app's data
           v = localStorage.getItem(k);
           if (v != null) N.set(k, v);
         }

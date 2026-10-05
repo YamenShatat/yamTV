@@ -45,7 +45,7 @@ It is the web build of the yamTV Android TV app, itself a rebuild of
 ## Local testing
 
 Serve the folder (any static server) and run `npx wrangler dev` in `relay` with a `.dev.vars` file
-(`ALLOW_HOST=...` and `SECRET=...`, not committed). In the browser: `localStorage.relay = 'http://127.0.0.1:8787'`.
+(`ALLOW_HOST=...` and `SECRET=...`, not committed). In the browser: `localStorage['yamtv:relay'] = 'http://127.0.0.1:8787'`.
 
 ## License
 
