@@ -1,0 +1,161 @@
+/* yamTV on the web. app.css is the Android TV app's (a 1280px landscape page); this adds what the
+   app draws natively there (background, video player) and the phone layout. */
+
+html { background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+/* Safari zooms into any text field under 16px. */
+.box input, .bigsearch input { font-size: 16px; }
+.web .f { cursor: pointer; }
+@media (hover: hover) { .web .f:hover { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.45); } }
+.web .f:focus { box-shadow: 0 0 0 2px var(--accent); }
+.web .f:focus:not(:focus-visible) { box-shadow: none; }
+
+/* ---- player: the browser's own video, over the Live TV preview box or the whole window ---- */
+#player { display: none; position: fixed; z-index: 40; background: #000; flex-direction: column; overflow: hidden; }
+#player.full { left: 0; top: 0; right: 0; bottom: 0; }
+#player.pane { z-index: 5; border-radius: 14px; }      /* under the page's lists and dialogs */
+#player.pane .pbar, #player.pane .pinfo { display: none; }
+#player video { flex: 1; min-height: 0; width: 100%; height: 100%; background: #000; }
+#player.full video { padding-bottom: env(safe-area-inset-bottom); }
+#player .pbar {
+  position: absolute; left: 0; top: 0; right: 0; z-index: 2; display: flex; align-items: center;
+  padding: calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 28px calc(18px + env(safe-area-inset-left));
+  background: linear-gradient(rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0)); transition: opacity 0.25s;
+}
+#player.idle .pbar { opacity: 0; pointer-events: none; }
+#player .ptitle { flex: 1; min-width: 0; color: #fff; font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#player .pnav, #player .pclose {
+  flex: none; height: 40px; margin-left: 8px; border-radius: 20px; background: rgba(255, 255, 255, 0.14);
+  color: #fff; font-size: 14px; font-weight: 600; white-space: nowrap; padding: 0 16px;
+}
+#player .pnav:disabled { opacity: 0.35; }
+#player .pclose { width: 44px; height: 44px; border-radius: 22px; padding: 0; font-size: 18px; text-align: center; }
+#player .pinfo {
+  display: none; position: absolute; left: 20px; right: 20px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 2;
+  background: rgba(21, 26, 31, 0.92); border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; color: var(--fg); font-size: 14px;
+}
+#player .pinfo .pl1 { display: flex; color: var(--fg-2); }
+#player .pinfo .pl1 span { margin-left: auto; color: var(--fg); font-weight: 600; }
+#player .pinfo .pl2 { margin-top: 10px; }
+#player .pinfo .pl3 { margin-top: 8px; color: var(--fg-2); }
+#player .pinfo .pbar2 { height: 4px; background: var(--surface-3); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+#player .pinfo .pbar2 i { display: block; height: 100%; background: var(--accent); }
+#player .pmsg {
+  display: none; position: absolute; left: 50%; top: 50%; z-index: 3; width: 340px; max-width: calc(100% - 32px);
+  transform: translate(-50%, -50%); flex-direction: column; align-items: center; text-align: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; color: var(--fg);
+}
+#player .pmsg b { font-size: 17px; margin-bottom: 6px; }
+#player .pmsg span { color: var(--fg-2); font-size: 14px; margin-bottom: 16px; }
+#player .pmsg .btn { margin: 0; text-decoration: none; }
+@media (max-width: 480px) {
+  #player .pnav { padding: 0 12px; font-size: 13px; }
+}
+
+/* ---- phone (and small windows): the sidebar becomes a bottom bar, grids get fewer columns ---- */
+@media (max-width: 820px), (max-height: 500px) {
+  body { flex-direction: column; }
+  #main { padding: calc(16px + env(safe-area-inset-top)) 16px calc(84px + env(safe-area-inset-bottom)); }
+
+  #side {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; width: auto; height: auto; overflow: visible;
+    flex-direction: row; padding: 4px calc(4px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) calc(4px + env(safe-area-inset-left));
+    border-right: 0; border-top: 1px solid var(--line-soft); background: var(--bg);
+  }
+  #side .brand, #side .side-fill, #side .side-sep, #side .provider, #side .expiry,
+  #side [data-go="later"], #side [data-go="recent"] { display: none; }
+  #side .nav, #side .nav.search-btn {
+    flex: 1; min-width: 0; flex-direction: column; justify-content: center; height: 54px; margin: 0; padding: 0;
+    border: 0; background: none; font-size: 10.5px; font-weight: 500; text-align: center; white-space: nowrap;
+  }
+  #side .nav .ic { margin: 0 0 3px; width: 22px; height: 22px; }
+  #side .nav .kbd { display: none; }
+  #side .nav.on { background: none; color: var(--accent); }
+  #side [data-go="home"] { order: 1; }
+  #side [data-go="live"] { order: 2; }
+  #side [data-go="movies"] { order: 3; }
+  #side [data-go="series"] { order: 4; }
+  #side .nav.search-btn { order: 5; }
+  #side [data-go="favorites"] { order: 6; }
+  #side [data-go="settings"] { order: 7; }
+
+  h1.ttl { font-size: 34px; }
+  .sub { font-size: 14px; }
+  h2 { font-size: 20px; }
+
+  .hero { flex-direction: column; height: auto; }
+  .hero .big { margin: 0 0 12px; padding: 22px; }
+  .tile .eyebrow { position: static; margin-bottom: 14px; }
+  .tile .big-ic { width: 44px; height: 44px; }
+  .tile .h { font-size: 44px; margin-top: 12px; }
+  .tile .p { margin-top: 8px; }
+  .hero .side { flex-direction: row; }
+  .hero .side .tile { padding: 16px; }
+  .hero .side .tile:first-child { margin: 0 12px 0 0; }
+  .side .tile .h { font-size: 24px; margin-top: 10px; }
+  .side .tile .p { display: none; }
+
+  .rail .card { width: 118px; margin-right: 10px; }
+  .card { width: calc((100% - 20px) / 3); margin: 0 10px 12px 0; }
+  .grid .card:nth-child(5n) { margin-right: 10px; }
+  .grid .card:nth-child(3n) { margin-right: 0; }
+  .card:focus { transform: none; }
+  .card .meta { padding: 6px 8px 7px; }
+  .card .t { font-size: 12.5px; }
+  .card .s { font-size: 10px; }
+  .poster .ph { font-size: 28px; }
+
+  .filters { flex-wrap: wrap; }
+  .filters > * { margin: 0 8px 8px 0; }
+  .sel.w1 { width: auto; flex: 1; }
+  .filters .box { flex-basis: 100%; order: 3; margin-right: 0; }
+
+  /* Live TV: one list; a channel opens full screen (no preview box). */
+  #main.v-live { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+  .live { flex-direction: column; }
+  .lp { width: auto; margin: 0; flex: 1; min-height: 0; }
+  .lp .filters .box { order: 0; }
+  .rp { display: none; }
+
+  .detail { margin: calc(-16px - env(safe-area-inset-top)) -16px 0; padding: calc(20px + env(safe-area-inset-top)) 16px 0; min-height: 0; }
+  .backdrop { height: 300px; }
+  .dposter { width: 110px; margin-right: 14px; align-self: flex-start; }
+  .dinfo h1 { font-size: 24px; }
+  .dmeta { font-size: 12.5px; margin-bottom: 12px; }
+  .dmeta span { display: inline-block; margin-right: 10px; }
+  .dacts { display: flex; flex-wrap: wrap; }
+  .dacts .btn { height: 38px; padding: 0 12px; margin: 0 8px 8px 0; font-size: 13.5px; }
+  .plot { font-size: 14px; }
+  .seasons { flex-wrap: nowrap; overflow-x: auto; margin: 18px 0 8px; }
+  .seasons .chip { flex: none; }
+  .ep .th { width: 112px; height: 63px; margin-right: 12px; }
+  .ep .nm { font-size: 14px; }
+  .ep .pl { font-size: 12px; }
+
+  .welcome { margin: 30px auto 0; padding: 30px 20px; }
+  .welcome .big { font-size: 40px; }
+  .form { padding: 18px 16px; }
+
+  .set .panel { padding: 16px; }
+  .set .btn { margin-bottom: 8px; }
+  .setrow { flex-wrap: wrap; }
+  .swatches { flex-wrap: wrap; margin-top: 10px; }
+  .sw { margin: 0 8px 8px 0; }
+
+  .chips { flex-wrap: wrap; }
+  .chip { margin-bottom: 8px; }
+  .sheet, .sheet.mgr { left: 16px; right: 16px; width: auto; margin: 0; top: 12vh; height: 76vh; }
+  .sheet.dlg { left: 16px; right: 16px; width: auto; margin: 0; top: 30vh; height: auto; }
+  #toast { left: 16px; right: 16px; width: auto; margin-left: 0; bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+
+/* Phone on its side: wider, so five posters a row again. */
+@media (max-height: 500px) and (min-width: 600px) {
+  .card { width: calc((100% - 40px) / 5); }
+  .grid .card:nth-child(3n) { margin-right: 10px; }
+  .grid .card:nth-child(5n) { margin-right: 0; }
+  .hero { flex-direction: row; }
+  .hero .big { margin: 0 12px 0 0; }
+  .hero .side { flex-direction: column; }
+  .hero .side .tile:first-child { margin: 0 0 12px; }
+}
