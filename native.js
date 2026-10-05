@@ -206,7 +206,8 @@
     var url = it.url;
     // Live TV on the web is HLS (.m3u8): every browser can play it, natively or with hls.js.
     if (live) url = url.replace(/\.ts(\?|$)/i, '.m3u8$1');
-    var src = relayUrl(url);
+    // A downloaded file (a path on this PC) plays from the relay.
+    var src = /^https?:/i.test(url) ? relayUrl(url) : relayBase() + '/f?p=' + encodeURIComponent(url);
     // Close the previous stream at once: the account allows a single connection.
     if (hls) { hls.destroy(); hls = null; }
     video.removeAttribute('src');
@@ -221,11 +222,22 @@
       var p = video.play();
       if (p && p.catch) p.catch(function () { /* autoplay refused: the controls are there */ });
     };
-    if (isHls && !video.canPlayType('application/vnd.apple.mpegurl')) {
+    // hls.js wherever it works (it lets the player pick the best quality); the browser's own HLS otherwise.
+    if (isHls && (window.MediaSource || window.ManagedMediaSource) && !/iPhone|iPad|iPod/.test(navigator.userAgent)) {
       withHls(function (Hls) {
-        if (!Hls || !Hls.isSupported()) { failed(4); return; }
-        hls = new Hls({ enableWorker: true, lowLatencyMode: false });
+        if (!Hls || !Hls.isSupported()) { video.src = src; start(); return; } // the browser's own HLS
+        hls = new Hls({ enableWorker: true, lowLatencyMode: false, capLevelToPlayerSize: false });
         hls.on(Hls.Events.ERROR, function (ev, d) { if (d && d.fatal) failed(2); });
+        // Always the best the stream offers: the highest resolution/bitrate, locked (no start-low
+        // adaptive switching), and the audio track with the most channels.
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          var best = 0;
+          hls.levels.forEach(function (l, i) { if ((l.height || 0) * 1e9 + (l.bitrate || 0) > (hls.levels[best].height || 0) * 1e9 + (hls.levels[best].bitrate || 0)) best = i; });
+          hls.currentLevel = best;
+          var a = hls.audioTracks || [], top = -1, ch = -1;
+          a.forEach(function (t, i) { var c = parseInt(t.channels || '2', 10); if (c > ch) { ch = c; top = i; } });
+          if (top >= 0 && top !== hls.audioTrack) hls.audioTrack = top;
+        });
         hls.loadSource(src);
         hls.attachMedia(video);
         start();
@@ -407,7 +419,31 @@
     }
   }
 
+  // ---------- downloads, done by the relay on this PC (relay/local.js) ----------
+
+  var dlJson = '[]';
+  function dlPoll() {
+    fetch(relayBase() + '/dl/list', { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      if (t !== dlJson) { dlJson = t; tell('onDownloads', JSON.parse(t)); }
+    }).catch(function () { /* relay not running */ }).then(function () {
+      setTimeout(dlPoll, document.hidden ? 5000 : 1000);
+    });
+  }
+  function dlPost(p, body) {
+    // text/plain keeps it a simple request (no preflight).
+    fetch(relayBase() + p, { method: 'POST', body: body || '', headers: { 'Content-Type': 'text/plain' } })
+      .then(function () { setTimeout(dlPoll, 200); })
+      .catch(function () { tell('toast', 'Start the yamTV relay on this PC first (the Start yamTV relay shortcut).'); });
+  }
+  setTimeout(dlPoll, 500);
+
   window.Native = {
+    downloads: function () { return dlJson; },
+    download: function (spec) { dlPost('/dl/add', spec); },
+    dlCancel: function (k) { dlPost('/dl/cancel?key=' + encodeURIComponent(k)); },
+    dlDelete: function (k) { dlPost('/dl/delete?key=' + encodeURIComponent(k)); },
+    dlRetry: function (k) { dlPost('/dl/retry?key=' + encodeURIComponent(k)); },
+    openDownloads: function () { dlPost('/dl/open'); },
     platform: function () { return 'web'; },
     apiBase: apiBase,
     // yamDrive lives on the same address (yamenshatat.github.io), so it shares this browser storage;

@@ -62,6 +62,8 @@
   var WEB = false;
   try { WEB = !!(window.Native && N.platform && N.platform() === 'web'); } catch (e) { WEB = false; }
   if (WEB) document.documentElement.className += ' web';
+  // Downloads: the website does them through the relay on this PC (relay/local.js).
+  var DLS = WIN || WEB;
 
   // Saved state lives on the Android side (written to disk at once, so a power cut loses nothing).
   // Values saved by version 1.0.0 in WebView localStorage are moved over on first read.
@@ -447,7 +449,7 @@
     ['home', 'Home', 'home'], ['live', 'Live TV', 'tv'], ['movies', 'Movies', 'movie'], ['series', 'Series', 'stack'],
     ['favorites', 'Favorites', 'star'], ['later', 'Watch later', 'bookmark'], ['recent', 'Recently added', 'sparkles']
   ];
-  if (WIN) NAV.push(['downloads', 'Downloads', 'download']);
+  if (DLS) NAV.push(['downloads', 'Downloads', 'download']);
   var NAV_OF = { movie: 'movies', show: 'series', login: 'settings' };
 
   function go(v, a) {
@@ -1011,7 +1013,7 @@
     each(showState.seasons, function (s) {
       h += '<button class="f chip' + (s === showState.season ? ' on' : '') + '" data-act="season" data-s="' + esc(s) + '">Season ' + esc(s) + '</button>';
     });
-    if (WIN) h += '<button class="f chip dlall" data-act="dlseason">' + ic('download') + 'Download season ' + esc(showState.season) + '</button>';
+    if (DLS) h += '<button class="f chip dlall" data-act="dlseason">' + ic('download') + 'Download season ' + esc(showState.season) + '</button>';
     $('#seasons').innerHTML = h;
     var le = lastEp[cur.a.id], out = '';
     each(showState.eps[showState.season] || [], function (e, i) {
@@ -1083,7 +1085,7 @@
 
   var dls = {};
   function setDownloads(list) { dls = {}; each(list || [], function (d) { dls[d.key] = d; }); }
-  if (WIN) { try { setDownloads(JSON.parse(N.downloads())); } catch (e) { dls = {}; } }
+  if (DLS) { try { setDownloads(JSON.parse(N.downloads())); } catch (e) { dls = {}; } }
   function localFile(key) { var d = dls[key]; return d && d.status === 'done' ? d.file : null; }
   function pct(d) { return d.size > 0 ? Math.min(100, Math.floor(100 * d.done / d.size)) : 0; }
   function size(n) { return n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' GB' : Math.max(1, Math.round(n / 1048576)) + ' MB'; }
@@ -1094,7 +1096,7 @@
     return 'Queued' + (d.done ? ' · ' + size(d.done) + ' so far' : '') + ' (downloads pause while you stream)';
   }
   function dlButton(key) {
-    if (!WIN) return '';
+    if (!DLS) return '';
     var d = dls[key];
     var t = !d ? 'Download' : d.status === 'done' ? 'Downloaded' : d.status === 'error' ? 'Retry download'
       : d.status === 'downloading' ? 'Downloading ' + pct(d) + '%' : 'Queued';
@@ -1102,7 +1104,7 @@
       ic(d && d.status === 'done' ? 'check' : 'download') + esc(t) + '</button>';
   }
   function epDlButton(e, i) {
-    if (!WIN) return '';
+    if (!DLS) return '';
     var d = dls['e' + e.id], cls = !d ? '' : d.status === 'done' ? ' done' : d.status === 'error' ? ' err' : ' busy';
     var label = !d ? '' : d.status === 'done' ? '' : d.status === 'error' ? 'Retry' : d.status === 'downloading' ? pct(d) + '%' : 'Queued';
     return '<button class="f epdl' + cls + '" data-act="dlep" data-i="' + i + '" data-k="e' + e.id + '" title="Download">' +
@@ -1485,6 +1487,7 @@
   ACTS.exitno = function () { closeModal(); };
 
   var App = window.App = {
+    toast: function (msg) { toast(msg); },
     back: function () {
       if (modalCb) { closeModal(); return true; }
       if (hist.length) {
