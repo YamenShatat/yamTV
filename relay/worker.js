@@ -10,7 +10,7 @@
 // HLS playlists are rewritten so each segment / sub-playlist is fetched through /s as well.
 // Everything else (MP4/MKV movies, .ts segments) streams straight through, Range requests included.
 //
-// Settings (wrangler secret put ...): ALLOW_HOST e.g. "cf.aakj.me"; SECRET any long random string.
+// Settings (wrangler secret put ...): ALLOW_HOST e.g. "cf.example.com"; SECRET any long random string.
 
 export default {
   async fetch(request, env) {

@@ -1,6 +1,6 @@
 # Cloudflare Worker for yamTV's video. Deploy: npx wrangler deploy (from this folder).
 # Secrets, set once and never committed:
-#   npx wrangler secret put ALLOW_HOST   -> the IPTV server's host name, e.g. cf.aakj.me
+#   npx wrangler secret put ALLOW_HOST   -> the IPTV server's host name, e.g. cf.example.com
 #   npx wrangler secret put SECRET       -> any long random string (signs playlist addresses)
 name = "yamtv-relay"
 main = "worker.js"
