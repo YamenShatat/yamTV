@@ -11,8 +11,9 @@
 (function () {
   'use strict';
 
-  // The relay's address (relay/README). It can be changed in the browser: localStorage.relay.
-  var RELAY = 'https://yamtv-relay.yamenshatat.workers.dev';
+  // The relay runs on this PC (relay/local.js; start it with "Start yamTV relay"). It can be changed
+  // in the browser: localStorage['yamtv:relay'].
+  var RELAY = 'http://127.0.0.1:8770';
   var HLS_JS = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js';
   var MAX_AGE_MS = 12 * 60 * 60 * 1000;
   var SAVE_EVERY_MS = 5000;
@@ -268,7 +269,7 @@
       }).catch(function () {
         failed.checked = false;
         msgEl.innerHTML = '<b>Can’t reach the yamTV relay.</b><span>Video comes through the relay (' + esc(relayBase()) +
-          '). It is not set up yet, or it is offline. Try again in a moment.</span>';
+          '). Start it on this PC with the &ldquo;Start yamTV relay&rdquo; shortcut, then try again.</span>';
         msgEl.style.display = 'flex';
         tell('onPlayerError', 'The yamTV relay cannot be reached.');
       });

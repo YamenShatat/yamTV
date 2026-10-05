@@ -1,3 +1,4 @@
 node_modules/
 .wrangler/
 relay/.dev.vars
+relay/local.json

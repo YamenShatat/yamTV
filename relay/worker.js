@@ -32,7 +32,7 @@ export default {
     if (range) headers.set('Range', range);
     let upstream;
     try {
-      upstream = await fetch(target, { method: request.method, headers, redirect: 'follow' });
+      upstream = await follow(target, request.method, headers);
     } catch (e) {
       return text('The IPTV server did not answer: ' + e.message, 502);
     }
@@ -55,6 +55,25 @@ export default {
     return new Response(upstream.body, { status: upstream.status, headers: out });
   }
 };
+
+// Redirects are followed here rather than by fetch: the IPTV server redirects to addresses with an
+// explicit ":80", which Cloudflare refuses between its own sites (error 1003), so the default port
+// is dropped. upstream.url is set to the final address for the playlist rewrite.
+async function follow(url, method, headers) {
+  for (let hops = 0; hops < 5; hops++) {
+    const u = new URL(url);
+    if ((u.protocol === 'http:' && u.port === '80') || (u.protocol === 'https:' && u.port === '443')) u.port = '';
+    const res = await fetch(u.href, { method, headers, redirect: 'manual' });
+    const loc = res.headers.get('Location');
+    if (res.status >= 300 && res.status < 400 && loc) {
+      url = new URL(loc, u.href).href;
+      continue;
+    }
+    Object.defineProperty(res, 'url', { value: u.href });
+    return res;
+  }
+  throw new Error('too many redirects');
+}
 
 function hostAllowed(host, allow) {
   return !!allow && allow.split(',').map(s => s.trim().toLowerCase()).filter(Boolean).includes(host.toLowerCase());
