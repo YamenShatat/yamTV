@@ -30,7 +30,7 @@ It is the web build of the yamTV Android TV app, itself a rebuild of
 ## Downloads
 
 Download on a movie, on each episode, or "Download season": the relay saves the original files
-(highest quality, every audio track) to `Downloads\yamTV`, one at a time. Downloads pause while
+(highest quality, every audio track) to `D:\`, one at a time. Downloads pause while
 you stream (the account allows one connection) and resume where they stopped. The Downloads page
 shows progress and plays finished files from this PC.
 

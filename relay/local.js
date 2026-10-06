@@ -87,14 +87,13 @@ function rewrite(body, base) {
   }).join('\n');
 }
 
-// ---------- downloads: one at a time into Downloads\yamTV; streaming holds them ----------
+// ---------- downloads: one at a time into D:\; streaming holds them ----------
 //
 // The account allows a single connection, so while anything streams through /s the current
 // download stops (its .part file stays) and resumes afterwards with a Range request.
 // List kept in relay/downloads.json (not committed). Same entry shape as the page expects.
 
-const os = require('os');
-const ROOT = path.join(os.homedir(), 'Downloads', 'yamTV');
+const ROOT = 'D:\\';
 const LIST = path.join(__dirname, 'downloads.json');
 let list = [];
 try { list = JSON.parse(fs.readFileSync(LIST, 'utf8')); } catch { list = []; }
@@ -157,7 +156,14 @@ async function run(e) {
     e.done = have;
     currentUp = up;
     const out = fs.createWriteStream(part, { flags: resumed ? 'a' : 'w' });
-    up.on('data', c => { e.done += c.length; });
+    // Speed in megabits per second, measured over each second.
+    let mark = e.done, t0 = Date.now();
+    e.speed = 0;
+    up.on('data', c => {
+      e.done += c.length;
+      const ms = Date.now() - t0;
+      if (ms >= 1000) { e.speed = (e.done - mark) * 8 / ms / 1000; mark = e.done; t0 = Date.now(); }
+    });
     up.pipe(out);
     await new Promise((resolve, reject) => {
       out.on('finish', resolve);
@@ -207,10 +213,10 @@ function readBody(req) {
   return new Promise(resolve => { let b = ''; req.on('data', c => { b += c; }); req.on('end', () => resolve(b)); });
 }
 
-// A downloaded file, for playing it in the browser (Range supported). Only files under ROOT.
+// A downloaded file, for playing it in the browser (Range supported). Only finished downloads in the list.
 function serveFile(req, res, file) {
   const full = path.resolve(file);
-  if (!full.startsWith(path.resolve(ROOT) + path.sep) || !fs.existsSync(full)) return text(res, 404, 'Not found');
+  if (!list.some(x => x.status === 'done' && path.resolve(x.file) === full) || !fs.existsSync(full)) return text(res, 404, 'Not found');
   const size = fs.statSync(full).size;
   const type = /\.mp4$|\.m4v$/i.test(full) ? 'video/mp4' : /\.mkv$/i.test(full) ? 'video/x-matroska' : 'application/octet-stream';
   const m = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '');
@@ -256,7 +262,6 @@ async function downloadsApi(req, res, url) {
       if (e && e.status === 'error') { e.status = 'queued'; e.error = null; saveList(); pump(); }
       break;
     case '/dl/open':
-      fs.mkdirSync(ROOT, { recursive: true });
       require('child_process').spawn('explorer.exe', [ROOT], { detached: true, stdio: 'ignore' }).unref();
       break;
     default:
@@ -282,9 +287,14 @@ http.createServer(async (req, res) => {
   const ok = k ? k === sign(target) : allowed.includes(parsed.hostname.toLowerCase());
   if (!ok || !/^https?:$/.test(parsed.protocol)) return text(res, 403, 'Not allowed');
 
+  // The page may let go while we wait for the server (fast zapping, seeking); 'close' has then
+  // already fired, so note it now or the stream count never drops and downloads stay held.
+  let gone = false;
+  res.on('close', () => { gone = true; });
   let r;
   try { r = await get(target, req.headers.range); } catch (e) { return text(res, 502, 'The IPTV server did not answer: ' + e.message); }
   const { up, finalUrl } = r;
+  if (gone) return up.destroy();
   if (up.statusCode < 300 && isPlaylist(finalUrl, up.headers['content-type'])) {
     let body = '';
     up.setEncoding('utf8');

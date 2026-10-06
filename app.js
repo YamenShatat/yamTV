@@ -1091,7 +1091,7 @@
   function size(n) { return n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' GB' : Math.max(1, Math.round(n / 1048576)) + ' MB'; }
   function dlText(d) {
     if (d.status === 'done') return 'Downloaded · ' + size(d.size);
-    if (d.status === 'downloading') return pct(d) + '% · ' + size(d.done) + (d.size ? ' of ' + size(d.size) : '');
+    if (d.status === 'downloading') return pct(d) + '% · ' + size(d.done) + (d.size ? ' of ' + size(d.size) : '') + (d.speed ? ' · ' + d.speed.toFixed(1) + ' Mbps' : '');
     if (d.status === 'error') return 'Failed: ' + (d.error || 'unknown error');
     return 'Queued' + (d.done ? ' · ' + size(d.done) + ' so far' : '') + ' (downloads pause while you stream)';
   }
@@ -1148,7 +1148,7 @@
   };
 
   VIEWS.downloads = function (a, r) {
-    main.innerHTML = head('Downloads', 'Saved on this PC in Downloads\\yamTV. Downloads pause while you stream (your account allows one connection) and continue afterwards.') +
+    main.innerHTML = head('Downloads', 'Saved on this PC in D:\\. Downloads pause while you stream (your account allows one connection) and continue afterwards.') +
       '<div class="dlbar"><button class="f btn af" data-act="dlfolder">' + ic('folder') + 'Open folder</button></div><div id="dllist"></div>';
     renderDownloads();
     settle(r);
