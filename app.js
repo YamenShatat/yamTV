@@ -1111,17 +1111,19 @@
       ic(d && d.status === 'done' ? 'check' : d && d.status === 'error' ? 'x' : 'download') + (label ? '<span>' + label + '</span>' : '') + '</button>';
   }
   function pad2(n) { n = String(n); return n.length < 2 ? '0' + n : n; }
+  // Name for folders and files on disk: without the "AR-SUBS:" tag, and no "/" (it would nest folders).
+  function diskName(n) { return n.replace(/^AR-SUBS\s*:\s*/i, '').replace(/\//g, ' '); }
   function queueMovie(it) {
     N.download(JSON.stringify({
       key: 'm' + it.id, url: movieUrl(it.id, it.e), title: it.n, sub: 'Movie', poster: it.i, ext: it.e || 'mp4',
-      folder: 'Movies/' + it.n.replace(/\//g, ' '), name: it.n, meta: JSON.stringify({ item: slim(it) })
+      folder: 'Movies/' + diskName(it.n), name: diskName(it.n), meta: JSON.stringify({ item: slim(it) })
     }));
   }
   function queueEpisode(it, season, e) {
     var code = 'S' + pad2(season) + 'E' + pad2(e.episode_num);
     N.download(JSON.stringify({
       key: 'e' + e.id, url: episodeUrl(e.id, e.container_extension), title: it.n, sub: code + (e.title ? ' · ' + e.title : ''),
-      poster: it.i, ext: e.container_extension || 'mp4', folder: 'Series/' + it.n.replace(/\//g, ' ') + '/Season ' + (+season), name: code + (e.title ? ' - ' + e.title : ''),
+      poster: it.i, ext: e.container_extension || 'mp4', folder: 'Series/' + diskName(it.n) + '/Season ' + (+season), name: code + (e.title ? ' - ' + e.title : ''),
       meta: JSON.stringify({ item: slim(it), ep: { s: season, id: e.id, num: e.episode_num } })
     }));
   }
