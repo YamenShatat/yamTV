@@ -13,8 +13,8 @@ body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-ins
 /* ---- player: the browser's own video, over the Live TV preview box or the whole window ---- */
 #player { display: none; position: fixed; z-index: 40; background: #000; flex-direction: column; overflow: hidden; }
 #player.full { left: 0; top: 0; right: 0; bottom: 0; }
-#player.pane { z-index: 5; border-radius: 14px; }      /* under the page's lists and dialogs */
-#player.pane .pbar, #player.pane .pinfo { display: none; }
+#player.inbox { z-index: 5; border-radius: 14px; }      /* under the page's lists and dialogs */
+#player.inbox .pbar, #player.inbox .pinfo { display: none; }
 #player video { flex: 1; min-height: 0; width: 100%; height: 100%; background: #000; }
 #player.full video { padding-bottom: env(safe-area-inset-bottom); }
 #player .pbar {

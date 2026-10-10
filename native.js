@@ -174,7 +174,7 @@
     if (!player || !active) return;
     var r = paneEl && !full && document.body.contains(paneEl) ? paneEl.getBoundingClientRect() : null;
     if (r && r.width > 40) {
-      player.className = 'pane';
+      player.className = 'inbox'; // not 'pane': the page's preview box style has that name
       player.style.left = r.left + 'px'; player.style.top = r.top + 'px';
       player.style.width = r.width + 'px'; player.style.height = r.height + 'px';
       video.controls = false;
